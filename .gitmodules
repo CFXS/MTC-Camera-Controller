@@ -1,0 +1,4 @@
+[submodule "TimecodeCameraController/vendor/LicenseGen"]
+	path = TimecodeCameraController/vendor/LicenseGen
+	url = https://github.com/CFXS/CFXS-License-Header-Generator.git
+	branch = master
