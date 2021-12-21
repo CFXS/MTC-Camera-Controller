@@ -73,6 +73,7 @@ target_link_libraries(
           Qt::Svg
           Qt::Xml
           Qt::OpenGLWidgets
+          XInput
           rtmidi
 )
 

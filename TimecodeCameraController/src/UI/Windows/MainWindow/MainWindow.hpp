@@ -19,6 +19,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <Core/Gamepad/GamepadState.hpp>
 
 namespace Ui {
     class MainWindow;
@@ -34,8 +35,16 @@ namespace TCC::UI {
         explicit MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
 
+    private:
+        float GetAxisThreshold() const {
+            return 4500;
+        }
+
     signals:
         void Closed();
+
+    protected slots:
+        void GamepadStateChanged(const GamepadState &gps, const int &playerId);
 
     protected:
         void closeEvent(QCloseEvent *event);

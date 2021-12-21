@@ -33,6 +33,7 @@
 #include <QPainterPath>
 
 #include <Core/MIDI_Machine.hpp>
+#include <Core/Gamepad/GamepadServer.hpp>
 
 namespace TCC::UI {
 
@@ -138,6 +139,8 @@ namespace TCC::UI {
             mtcLabel->repaint();
         });
         mtcUpdate->start(1000 / 30);
+
+        connect(&GamepadServer::instance(), SIGNAL(stateUpdate(GamepadState, int)), this, SLOT(GamepadStateChanged(GamepadState, int)));
     }
 
     MainWindow::~MainWindow() {
@@ -147,6 +150,29 @@ namespace TCC::UI {
         printf("Close MainWindow\n");
         emit Closed();
         event->accept();
+    }
+
+    float map(float x, float in_min, float in_max, float out_min, float out_max) {
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    }
+
+    void MainWindow::GamepadStateChanged(const GamepadState& state, const int& playerId) {
+        float accTarget_Pos_Z = map(state.m_lTrigger, 0, 255, 0, -1) + map(state.m_rTrigger, 0, 255, 0, 1);
+        float accTarget_Pos_X = map(fabs(state.m_lThumb.xAxis) > GetAxisThreshold() ? state.m_lThumb.xAxis : 0, -32768, 32767, -1, 1);
+        float accTarget_Pos_Y = map(fabs(state.m_lThumb.yAxis) > GetAxisThreshold() ? state.m_lThumb.yAxis : 0, -32768, 32767, -1, 1);
+
+        float accTarget_Pan  = map(fabs(state.m_rThumb.xAxis) > GetAxisThreshold() ? state.m_rThumb.xAxis : 0, -32768, 32767, -1, 1);
+        float accTarget_Tilt = map(fabs(state.m_rThumb.yAxis) > GetAxisThreshold() ? state.m_rThumb.yAxis : 0, -32768, 32767, -1, 1);
+
+        static constexpr float POS_MUL = 5;
+        static constexpr float ROT_MUL = 5;
+
+        ui->pb_X->setValue(ui->pb_X->value() + accTarget_Pos_X * POS_MUL);
+        ui->pb_Y->setValue(ui->pb_Y->value() + accTarget_Pos_Y * POS_MUL);
+        ui->pb_Z->setValue(ui->pb_Z->value() + accTarget_Pos_Z * POS_MUL);
+
+        ui->pb_Pan->setValue(ui->pb_Pan->value() + accTarget_Pan * ROT_MUL);
+        ui->pb_Tilt->setValue(ui->pb_Tilt->value() + accTarget_Tilt * ROT_MUL);
     }
 
 } // namespace TCC::UI
