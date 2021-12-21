@@ -13,15 +13,27 @@ namespace TCC {
     using MTC_FrameRate = _MTC_FrameRate::MTC_FrameRate;
 
     static constexpr int MTC_FRAMERATE_TO_INT[MTC_FrameRate::_COUNT]            = {24, 25, 30, 30};
+    static constexpr double MTC_FRAMERATE_TO_DOUBLE[MTC_FrameRate::_COUNT]      = {24, 25, 29.97, 30};
     static constexpr const char* MTC_FRAMERATE_TO_STRING[MTC_FrameRate::_COUNT] = {"24 FPS", "25 FPS", "29.97 FPS DF", "30 FPS"};
 
-    struct MTC_Full {
+#pragma pack(1)
+    struct MTC_FullFrame {
         uint8_t header[5];
-        uint8_t hh;
-        uint8_t mm;
-        uint8_t ss;
-        uint8_t ff;
+        union {
+            struct {
+                uint8_t hh;
+                uint8_t mm;
+                uint8_t ss;
+                uint8_t ff;
+            };
+            uint8_t _timedata[4];
+            uint32_t _timedata32;
+        };
         uint8_t end;
+
+        inline void ClearTime() {
+            _timedata32 = 0;
+        }
 
         inline bool IsValid() const {
             return (memcmp(header, MTC_FULL_MATCH, sizeof(header)) == 0) && end == 0xF7;
@@ -36,14 +48,14 @@ namespace TCC {
         }
 
         inline int GetSeconds() const {
-            return (mm & 0b111111) % 60;
+            return (ss & 0b111111) % 60;
         }
 
         inline int GetFrames() const {
-            return (mm & 0b11111) % MTC_FRAMERATE_TO_INT[GetRate()];
+            return (ff & 0b11111) % MTC_FRAMERATE_TO_INT[GetRate()];
         }
 
-        inline int GetRate() const {
+        inline MTC_FrameRate GetRate() const {
             switch ((hh >> 5) & 0b11) {
                 case 0b00: return MTC_FrameRate::FPS_24;
                 case 0b01: return MTC_FrameRate::FPS_25;
@@ -53,7 +65,13 @@ namespace TCC {
 
             return MTC_FrameRate::FPS_30;
         }
+
+        inline double ToMilliseconds() const {
+            return GetSeconds() * 1000 + GetMinutes() * 60000 + GetHours() * 3600000 +
+                   (1000.0 / MTC_FRAMERATE_TO_DOUBLE[GetRate()] * GetFrames());
+        }
     };
+#pragma pack()
     ////////////////////////////////////////////////////////////////////////
 
 } // namespace TCC

@@ -23,9 +23,13 @@
 #include <QAction>
 #include <QLayout>
 #include <QSettings>
-#include <QDesktopServices>
 #include <QFileDialog>
 #include <QNetworkInterface>
+#include <QTimer>
+#include <QWidget>
+#include <QString>
+#include <QGraphicsScene>
+#include <QGraphicsSimpleTextItem>
 
 #include <Core/MIDI_Machine.hpp>
 
@@ -84,7 +88,24 @@ namespace TCC::UI {
             MIDI_Machine::GetInstance()->SetCurrentDevice(ui->cb_MTC_Port->itemData(index, Qt::UserRole).toInt());
         });
 
-        RegisterActions();
+        auto scene        = new QGraphicsScene;
+        auto mtcTimeLabel = scene->addSimpleText("- No MTC -");
+        scene->setBackgroundBrush(QBrush(qApp->palette().color(QPalette::Window)));
+
+        mtcTimeLabel->setFont(QFont("Consolas", 20));
+        mtcTimeLabel->setBrush(QBrush(QColor{255, 255, 255}));
+
+        ui->mtc_GraphicsView->setScene(scene);
+
+        QTimer* timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, [=]() {
+            if (MIDI_Machine::GetInstance()->HaveSync()) {
+                mtcTimeLabel->setText(MIDI_Machine::GetInstance()->GetTimeString());
+            } else {
+                mtcTimeLabel->setText("- No MTC -");
+            }
+        });
+        timer->start(1000 / 60);
     }
 
     MainWindow::~MainWindow() {

@@ -1,6 +1,6 @@
 // [CFXS] //
 #include "MIDI_Machine.hpp"
-#include "MTC.hpp"
+#include <QMutex>
 
 namespace TCC {
 
@@ -55,6 +55,7 @@ namespace TCC {
     void MIDI_Machine::DeleteDevice() {
         delete m_CurrentDevice;
         m_CurrentDevice = nullptr;
+        m_Synced        = false;
     }
 
     QString MIDI_Machine::IndexToName(int idx) {
@@ -83,6 +84,8 @@ namespace TCC {
         if (!m_CurrentDevice)
             return;
 
+        m_Synced = false;
+
         m_CurrentDevice->setBufferSize(MIDI_BUFFER_SIZE, MIDI_BUFFER_COUNT);
         m_CurrentDevice->setCallback(
             [](double timeStamp, std::vector<unsigned char> *message, void *dis) {
@@ -109,18 +112,61 @@ namespace TCC {
 
         if (data->size() == 10) {
             // check full timecode
-            auto pack = reinterpret_cast<const MTC_Full *>(data->data());
+            auto pack = reinterpret_cast<const MTC_FullFrame *>(data->data());
             if (pack->IsValid()) {
-                printf("[MTC] Full TC: %02d:%02d:%02d.%02d %s\n",
-                       pack->GetHours(),
-                       pack->GetMinutes(),
-                       pack->GetSeconds(),
-                       pack->GetFrames(),
-                       MTC_FRAMERATE_TO_STRING[pack->GetRate()]);
+                static MTC_FullFrame lastReference;
+
+                if (memcmp(pack, &lastReference, sizeof(MTC_FullFrame))) {
+                    memcpy(&lastReference, pack, sizeof(MTC_FullFrame));
+
+                    UpdateTimestamp(pack);
+
+                    m_Synced = true;
+                    m_ReconstructedFrame.ClearTime();
+                }
+            } else {
+                m_Synced = false;
             }
-        } else if (data->size() == 2 && data->at(0) == 0xF1) {
+        } else if (m_Synced && data->size() == 2 && data->at(0) == 0xF1) {
             // quarter frame
+            auto seqIdx = (data->at(1) >> 4) & 0b111;
+            auto val    = (seqIdx & 1) ? ((data->at(1) & 0x0F) << 4) : (data->at(1) & 0x0F);
+
+            auto writeIndex = 3 - (seqIdx / 2);
+
+            m_ReconstructedFrame._timedata[writeIndex] |= val;
+
+            if (seqIdx == 7) {
+                UpdateTimestamp(&m_ReconstructedFrame);
+                m_ReconstructedFrame.ClearTime();
+            }
         }
+    }
+
+    void MIDI_Machine::UpdateTimestamp(const MTC_FullFrame *frame) {
+        QMutex mutex;
+        mutex.lock();
+
+        snprintf(m_TimeString, 32, "%02d:%02d:%02d.%02d", frame->GetHours(), frame->GetMinutes(), frame->GetSeconds(), frame->GetFrames());
+
+        m_CurrentFramerate = frame->GetRate();
+        m_CurrentTimestamp = frame->ToMilliseconds();
+
+        mutex.unlock();
+
+        //printf("[MTC] %s %s (%.1lfms)\n", m_TimeString, MTC_FRAMERATE_TO_STRING[m_CurrentFramerate], m_CurrentTimestamp);
+    }
+
+    QString MIDI_Machine::GetTimeString() {
+        QMutex mutex;
+        mutex.lock();
+        auto str = QString(m_TimeString);
+        mutex.unlock();
+        return str;
+    }
+
+    bool MIDI_Machine::HaveSync() const {
+        return m_Synced;
     }
 
 } // namespace TCC

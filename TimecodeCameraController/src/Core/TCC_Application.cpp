@@ -32,7 +32,7 @@ namespace TCC {
     }
 
     void TCC_Application::OnCreate() {
-        QFontDatabase::addApplicationFont(":/Font/OpenSans-Regular");
+        QFontDatabase::addApplicationFont(":/Font/Code");
 
         MIDI_Machine::GetInstance();
     }

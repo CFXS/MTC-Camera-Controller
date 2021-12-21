@@ -3,6 +3,7 @@
 #include <QVector>
 #include <QObject>
 #include "RtMidi.h"
+#include "MTC.hpp"
 
 namespace TCC {
 
@@ -26,6 +27,10 @@ namespace TCC {
 
         void SetCurrentDevice(int idx);
 
+        QString GetTimeString();
+
+        bool HaveSync() const;
+
     private:
         MIDI_Machine();
         ~MIDI_Machine();
@@ -33,6 +38,7 @@ namespace TCC {
         void DeleteDevice();
 
         void ProcessMessage(const std::vector<uint8_t>* data);
+        void UpdateTimestamp(const MTC_FullFrame* frame);
 
     signals:
         void DeviceOpenFailed(int idx);
@@ -40,6 +46,12 @@ namespace TCC {
     private:
         QVector<DeviceInfo> m_DeviceList;
         RtMidiIn* m_CurrentDevice = nullptr;
+
+        double m_CurrentTimestamp = 0;
+        bool m_Synced             = false;
+        MTC_FrameRate m_CurrentFramerate;
+        MTC_FullFrame m_ReconstructedFrame;
+        char m_TimeString[32];
     };
 
 } // namespace TCC
