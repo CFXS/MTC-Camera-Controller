@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TImecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -59,7 +59,7 @@ namespace TCC {
         darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(127, 127, 127));
         darkPalette.setColor(QPalette::BrightText, Qt::red);
         darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
-        darkPalette.setColor(QPalette::Highlight, QColor(0, 105, 220));
+        darkPalette.setColor(QPalette::Highlight, QColor(100, 100, 100));
         darkPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80, 80, 80));
         darkPalette.setColor(QPalette::HighlightedText, Qt::white);
         darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(127, 127, 127));

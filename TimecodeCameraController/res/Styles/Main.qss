@@ -2,10 +2,6 @@
     font-size: 12pt;
 }
 
-#codeField {
-    font: 12pt "Source Code Pro";
-}
-
 /* QMenuBar */
 
 QMenuBar {
@@ -167,7 +163,7 @@ QScrollBar:add-page:vertical, QScrollBar::sub-page:vertical {
 /* QToolTip */
 
 QToolTip {
-    background: palette(dark);
+    background: palette(dark); 
     border: 1px solid palette(mid);
     color: rgb(255, 255, 255);
 }
@@ -176,8 +172,13 @@ QToolTip {
 
 QComboBox {
     border: 1px solid palette(mid);
-    padding: 1px 18px 1px 3px;
-    font-size: 12pt;
+    padding: 1px 18px 1px 6px;
+    font-size: 13pt;
+}
+
+QComboBox QAbstractItemView {
+    background-color: palette(dark);
+    selection-background-color: rgba(0, 105, 230, 192);
 }
 
 QComboBox::drop-down {
@@ -188,10 +189,67 @@ QComboBox::drop-down {
 
 QComboBox::down-arrow {
     border: none;
-    border-image: url(:/Image/MidDownArrow.svg);
+    border-image: url(:/Image/MidDownArrow.svg) 4;
 }
 
 QComboBox::down-arrow:on {
     border: none;
+    border-image: url(:/Image/MidDownArrow.svg) 4;
+}
+
+/* QSpinBox */
+
+QSpinBox {
+    border: 1px solid palette(mid);
+    font-size: 13pt;
+    padding-right: 16px;
+    padding-left: 6px;
+}
+
+QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+
+    width: 16px;
+    border-image: url(:/Image/MidUpArrow.svg);
+    margin-top: 1px;
+    margin-right: 1px;
+    border-width: 0px;
+    background-color: rgb(80, 80, 80);
+}
+
+QSpinBox::up-button:hover {
+    background-color: rgb(120, 120, 120);
+}
+
+QSpinBox::up-button:pressed {
+    background-color: rgb(100, 100, 100);
+}
+
+QSpinBox::up-button:off {
+    background-color: rgb(60, 60, 60);
+}
+
+QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+
+    width: 16px;
+    margin-bottom: 1px;
+    margin-right: 1px;
     border-image: url(:/Image/MidDownArrow.svg);
+    border-width: 0px;
+    background-color: rgb(80, 80, 80);
+}
+
+QSpinBox::down-button:hover {
+    background-color: rgb(120, 120, 120);
+}
+
+QSpinBox::down-button:pressed {
+    background-color: rgb(100, 100, 100);
+}
+
+QSpinBox::down-button:off {
+    background-color: rgb(60, 60, 60);
 }
