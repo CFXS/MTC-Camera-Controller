@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------
-// CFXS TImecodeCameraController <https://github.com/CFXS/TImecodeCameraController>
+// CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
 // 
 // This program is free software: you can redistribute it and/or modify
