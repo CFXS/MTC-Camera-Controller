@@ -1,0 +1,6 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file alias="Font/Code">Fonts/SourceCodePro-Regular.ttf</file>
+    </qresource>
+</RCC> 
