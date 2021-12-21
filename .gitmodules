@@ -2,3 +2,7 @@
 	path = TimecodeCameraController/vendor/LicenseGen
 	url = https://github.com/CFXS/CFXS-License-Header-Generator.git
 	branch = master
+[submodule "TimecodeCameraController/vendor/RtMidi"]
+	path = TimecodeCameraController/vendor/RtMidi
+	url = https://github.com/CFXS/rtmidi
+	branch = master
