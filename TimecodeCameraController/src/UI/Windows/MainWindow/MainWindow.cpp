@@ -50,7 +50,17 @@ namespace TCC::UI {
 
         ui->content->setStyleSheet("border: 1px solid palette(dark);");
 
-        ui->cb_MTC_Port->addItems(MIDI_Machine::GetInstance()->GetDeviceNameList());
+        // MIDI Ports
+
+        ui->cb_MTC_Port->addItem(" - none - ", QVariant(-1));
+
+        for (auto& dev : MIDI_Machine::GetInstance()->GetDevices()) {
+            ui->cb_MTC_Port->addItem(dev.name, QVariant(dev.index));
+        }
+
+        // Network Interfaces
+
+        ui->cb_Netif->addItem(" - none - ", QVariant("null"));
 
         printf("Network Interfaces:\n");
         for (auto& netif : QNetworkInterface::allInterfaces()) {
@@ -69,6 +79,10 @@ namespace TCC::UI {
                 printf(" - %s [%s]\n", addr.ip().toString().toStdString().c_str(), netif.humanReadableName().toStdString().c_str());
             }
         }
+
+        connect(ui->cb_MTC_Port, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+            MIDI_Machine::GetInstance()->SetCurrentDevice(ui->cb_MTC_Port->itemData(index, Qt::UserRole).toInt());
+        });
 
         RegisterActions();
     }
