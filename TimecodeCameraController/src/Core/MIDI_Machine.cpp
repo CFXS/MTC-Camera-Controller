@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -145,7 +145,7 @@ namespace TCC {
             } else {
                 m_Synced = false;
             }
-        } else if (m_Synced && data->size() == 2 && data->at(0) == 0xF1) {
+        } else if (data->size() == 2 && data->at(0) == 0xF1) {
             // quarter frame
             auto seqIdx = (data->at(1) >> 4) & 0b111;
             auto val    = (seqIdx & 1) ? ((data->at(1) & 0x0F) << 4) : (data->at(1) & 0x0F);
@@ -155,7 +155,11 @@ namespace TCC {
             m_ReconstructedFrame._timedata[writeIndex] |= val;
 
             if (seqIdx == 7) {
-                UpdateTimestamp(&m_ReconstructedFrame);
+                if (m_Synced) {
+                    UpdateTimestamp(&m_ReconstructedFrame);
+                } else {
+                    m_Synced = true;
+                }
                 m_ReconstructedFrame.ClearTime();
             }
         }

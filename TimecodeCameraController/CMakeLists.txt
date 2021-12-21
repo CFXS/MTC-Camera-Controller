@@ -74,6 +74,7 @@ target_link_libraries(
           Qt::Xml
           Qt::OpenGLWidgets
           XInput
+          opengl32
           rtmidi
 )
 
