@@ -25,6 +25,9 @@
 #include <QSettings>
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QNetworkInterface>
+
+#include <Core/MIDI_Machine.hpp>
 
 namespace TCC::UI {
 
@@ -43,6 +46,28 @@ namespace TCC::UI {
             auto actionFont = action->font();
             actionFont.setPointSize(actionFont.pointSize() + 1);
             action->setFont(actionFont);
+        }
+
+        ui->content->setStyleSheet("border: 1px solid palette(dark);");
+
+        ui->cb_MTC_Port->addItems(MIDI_Machine::GetInstance()->GetDeviceNameList());
+
+        printf("Network Interfaces:\n");
+        for (auto& netif : QNetworkInterface::allInterfaces()) {
+            if (netif.addressEntries().isEmpty())
+                continue;
+            if (netif.type() != QNetworkInterface::Ethernet && netif.type() != QNetworkInterface::Wifi &&
+                netif.type() != QNetworkInterface::Loopback)
+                continue;
+
+            for (auto& addr : netif.addressEntries()) {
+                if (addr.ip().protocol() != QAbstractSocket::IPv4Protocol)
+                    continue;
+
+                ui->cb_Netif->addItem(addr.ip().toString() + QStringLiteral(" [") + netif.humanReadableName() + QStringLiteral("]"),
+                                      QVariant(netif.name()));
+                printf(" - %s [%s]\n", addr.ip().toString().toStdString().c_str(), netif.humanReadableName().toStdString().c_str());
+            }
         }
 
         RegisterActions();

@@ -171,3 +171,26 @@ QToolTip {
     border: 1px solid palette(mid);
     color: rgb(255, 255, 255);
 }
+
+/* QComboBox */
+
+QComboBox {
+    border: 1px solid palette(mid);
+    padding: 1px 18px 1px 3px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background-color: rgb(80, 80, 80);
+    padding: 4;
+}
+
+QComboBox::down-arrow {
+    border: none;
+    border-image: url(:/Image/MidDownArrow.svg);
+}
+
+QComboBox::down-arrow:on {
+    border: none;
+    border-image: url(:/Image/MidDownArrow.svg);
+}
