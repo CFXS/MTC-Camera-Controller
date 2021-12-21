@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Generate License Headers",
+            "type": "shell",
+            "command": "py",
+            "args": [
+                "${workspaceRoot}/TimecodeCameraController/vendor/LicenseGen/UpdateHeaders_GPLv3.py",
+                "${workspaceRoot}/TimecodeCameraController/src",
+                "${workspaceRoot}/TimecodeCameraController/_License.lhg"
+            ],
+            "group": "test"
+        },
+    ]
+}
