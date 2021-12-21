@@ -16,7 +16,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Qml Quick QuickControls2 Gui Svg Xml)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Qml Quick QuickControls2 Gui Svg Xml OpenGLWidgets)
 
 add_executable(${EXE_NAME} ${headers} ${sources} ${UI_files} ${QRC_files})
 
@@ -67,12 +67,12 @@ target_link_libraries(
           Qt::Core
           Qt::Widgets
           Qt::Network
-          Qt::Qml
           Qt::Quick
           Qt::QuickControls2
           Qt::Gui
           Qt::Svg
           Qt::Xml
+          Qt::OpenGLWidgets
           rtmidi
 )
 
@@ -100,6 +100,10 @@ add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E cop
 add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\bin\\Qt6Xmld.dll $<TARGET_FILE_DIR:${EXE_NAME}>)
 add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\bin\\Qt6Network.dll $<TARGET_FILE_DIR:${EXE_NAME}>)
 add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\bin\\Qt6Networkd.dll $<TARGET_FILE_DIR:${EXE_NAME}>)
+add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\bin\\Qt6OpenGL.dll $<TARGET_FILE_DIR:${EXE_NAME}>)
+add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\bin\\Qt6OpenGLd.dll $<TARGET_FILE_DIR:${EXE_NAME}>)
+add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\bin\\Qt6OpenGLWidgets.dll $<TARGET_FILE_DIR:${EXE_NAME}>)
+add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\bin\\Qt6OpenGLWidgetsd.dll $<TARGET_FILE_DIR:${EXE_NAME}>)
 
 add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\plugins\\platforms\\qwindows.dll $<TARGET_FILE_DIR:${EXE_NAME}>\\platforms\\qwindows.dll)
 add_custom_command(TARGET ${EXE_NAME} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_PREFIX_PATH}\\..\\..\\plugins\\platforms\\qwindowsd.dll $<TARGET_FILE_DIR:${EXE_NAME}>\\platforms\\qwindowsd.dll)

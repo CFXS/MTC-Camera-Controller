@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TImecodeCameraController>
 // Copyright (C) 2021 | CFXS
-//
+// 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+// 
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -28,12 +28,64 @@
 #include <QTimer>
 #include <QWidget>
 #include <QString>
-#include <QGraphicsScene>
-#include <QGraphicsSimpleTextItem>
+#include <QOpenGLWidget>
+#include <QPainter>
+#include <QPainterPath>
 
 #include <Core/MIDI_Machine.hpp>
 
 namespace TCC::UI {
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+
+    class MTC_TextWidgetGL : public QOpenGLWidget {
+    public:
+        MTC_TextWidgetGL() = default;
+
+        void SetString(QString str) {
+            m_String = str;
+        }
+
+        void paintEvent(QPaintEvent* e) override {
+            QPainter painter(this);
+
+            painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::SmoothPixmapTransform);
+
+            painter.fillRect(0, 0, width(), height(), QBrush(qApp->palette().color(QPalette::Window)));
+
+            QPainterPath path;
+            path.addRoundedRect(QRectF(0, 0, width(), height()), 4, 4);
+            //QPen pen(Qt::black, 10);
+            //painter.setPen(pen);
+            painter.fillPath(path, QBrush(QColor(16, 16, 16)));
+            //painter.drawPath(path);
+
+            auto font = QFont("Consolas", 20);
+            font.setStyleStrategy(QFont::PreferQuality);
+            painter.setFont(font);
+
+            if (MIDI_Machine::GetInstance()->HaveSync()) {
+                m_String = MIDI_Machine::GetInstance()->GetTimeString();
+                if (MIDI_Machine::GetInstance()->IsTimecodeActive()) {
+                    painter.setPen(QColor{0, 255, 0});
+                } else {
+                    painter.setPen(QColor{160, 160, 160});
+                }
+            } else {
+                m_String = "- No MTC -";
+                painter.setPen(QColor{255, 0, 0});
+            }
+
+            auto txt_w = painter.fontMetrics().horizontalAdvance(m_String);
+            auto txt_h = painter.fontMetrics().height();
+            painter.drawText(width() / 2 - txt_w / 2, height() / 2 + txt_h / 3, m_String);
+
+            painter.end();
+        }
+
+    private:
+        QString m_String;
+    };
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -88,24 +140,14 @@ namespace TCC::UI {
             MIDI_Machine::GetInstance()->SetCurrentDevice(ui->cb_MTC_Port->itemData(index, Qt::UserRole).toInt());
         });
 
-        auto scene        = new QGraphicsScene;
-        auto mtcTimeLabel = scene->addSimpleText("- No MTC -");
-        scene->setBackgroundBrush(QBrush(qApp->palette().color(QPalette::Window)));
+        auto mtcLabel = new MTC_TextWidgetGL;
+        ui->mtc_TimeContainer->layout()->addWidget(mtcLabel);
 
-        mtcTimeLabel->setFont(QFont("Consolas", 20));
-        mtcTimeLabel->setBrush(QBrush(QColor{255, 255, 255}));
-
-        ui->mtc_GraphicsView->setScene(scene);
-
-        QTimer* timer = new QTimer(this);
-        connect(timer, &QTimer::timeout, [=]() {
-            if (MIDI_Machine::GetInstance()->HaveSync()) {
-                mtcTimeLabel->setText(MIDI_Machine::GetInstance()->GetTimeString());
-            } else {
-                mtcTimeLabel->setText("- No MTC -");
-            }
+        auto mtcUpdate = new QTimer(this);
+        connect(mtcUpdate, &QTimer::timeout, [=]() {
+            mtcLabel->repaint();
         });
-        timer->start(1000 / 60);
+        mtcUpdate->start(1000 / 30);
     }
 
     MainWindow::~MainWindow() {
