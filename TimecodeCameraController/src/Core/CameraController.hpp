@@ -1,25 +1,28 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
 // [CFXS] //
 #pragma once
 
-#include <QObject>
 #include <Core/ArtNet/ArtNet.hpp>
+
+#include <QObject>
+#include <QHostAddress>
+#include <QUdpSocket>
 
 namespace TCC {
 
@@ -75,6 +78,13 @@ namespace TCC {
             return m_Fov;
         }
 
+        bool IsSocketConnected() const {
+            return m_SocketConnected;
+        }
+
+    private:
+        void SendOutput();
+
     private:
         float m_X;
         float m_Y;
@@ -84,11 +94,16 @@ namespace TCC {
         float m_Fov;
 
         QString m_NetworkInterfaceAddress = "null";
+        QHostAddress m_SendAddress;
+        bool m_AddressValid    = false;
+        QUdpSocket* m_Socket   = nullptr;
+        bool m_SocketConnected = false;
 
         uint16_t m_PatchUniverse;
         uint16_t m_PatchAddress;
 
         ArtNetDMX_Packet m_ArtPacket;
+        uint8_t m_DMX_Sequence = 0;
     };
 
 } // namespace TCC

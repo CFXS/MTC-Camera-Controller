@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -251,11 +251,13 @@ namespace TCC::UI {
 
         connect(ui->sb_Universe, &QSpinBox::valueChanged, [=](int val) {
             emit PatchChanged(static_cast<uint16_t>(val), ui->sb_Address->value());
+            m_CameraController->SetPatchUniverse(val);
             SetChangesMade();
         });
 
         connect(ui->sb_Address, &QSpinBox::valueChanged, [=](int val) {
             emit PatchChanged(ui->sb_Address->value(), static_cast<uint16_t>(val));
+            m_CameraController->SetPatchAddress(val);
             SetChangesMade();
         });
 
@@ -390,7 +392,7 @@ namespace TCC::UI {
             fovDir = -100; // reset
 
         m_CameraController->Update(accTarget_Pos_X,        // x
-                                   accTarget_Pos_Y,        // y
+                                   -accTarget_Pos_Y,       // y
                                    accTarget_Pos_Z,        // z
                                    accTarget_Pan,          // pan
                                    accTarget_Tilt,         // tilt

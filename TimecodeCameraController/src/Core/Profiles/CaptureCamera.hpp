@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -39,27 +39,27 @@ namespace TCC {
         uint8_t _scene;     // Scene = val/4
 
         void SetPosition(float x, float y, float z) {
-            _pos_X = map(x, -50, 50, 0, 0xFFFF);
-            _pos_Y = map(y, -50, 50, 0, 0xFFFF);
-            _pos_Z = map(z, -50, 50, 0, 0xFFFF);
+            _pos_X = CT_HTONS(map(x, -50, 50, 0, 0xFFFF));
+            _pos_Z = CT_HTONS(map(y, -50, 50, 0, 0xFFFF));
+            _pos_Y = CT_HTONS(map(z, -50, 50, 0, 0xFFFF));
         }
 
         void SetRotation(float pan, float tilt, float roll = 0) {
-            _rot_Pan  = map(pan, -180, 180, 0, 0xFFFF);
-            _rot_Tilt = map(tilt, -180, 180, 0, 0xFFFF);
-            _rot_Roll = map(roll, -180, 180, 0, 0xFFFF);
+            _rot_Pan  = CT_HTONS(map(pan, -180, 180, 0, 0xFFFF));
+            _rot_Tilt = CT_HTONS(map(tilt, -180, 180, 0, 0xFFFF));
+            _rot_Roll = CT_HTONS(map(roll, -180, 180, 0, 0xFFFF));
         }
 
         void SetFOV(float fov) {
-            _fov = map(fov, 5, 90, 0, 0xFFFF);
+            _fov = CT_HTONS(map(fov, 5, 90, 0, 0xFFFF));
         }
 
         void SetAmbient(float ambient) {
-            _ambient = map(ambient, 0, 1, 0, 0xFFFF);
+            _ambient = CT_HTONS(map(ambient, 0, 1, 0, 0xFFFF));
         }
 
         void SetExposure(float exposure) {
-            _exposure = map(exposure, -3, 3, 0, 0xFFFF);
+            _exposure = CT_HTONS(map(exposure, -3, 3, 0, 0xFFFF));
         }
 
         void SetFilter(uint8_t layerSet) {
