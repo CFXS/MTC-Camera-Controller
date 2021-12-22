@@ -5,5 +5,5 @@ A Qt based project for controlling cameras in lighting previz software with time
 - MTC through [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html)
 
 ### Supported Software
-- [Capture](https://www.capture.se/) (DMX standard mode camera)
+- [Capture](https://www.capture.se/) (DMX extended mode camera)
 
