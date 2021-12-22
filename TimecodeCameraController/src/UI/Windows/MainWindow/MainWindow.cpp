@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -37,7 +37,9 @@
 
 namespace TCC::UI {
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
+    static constexpr auto GAMEPAD_AXIS_THRESHOLD = 8000;
+    /////////////////////////////////////////////////////////////////
 
     class MTC_TextWidgetGL : public QOpenGLWidget {
     public:
@@ -97,7 +99,7 @@ namespace TCC::UI {
 
         ui->content->setStyleSheet("border: 1px solid palette(dark);");
 
-        ui->camLabel->setStyleSheet("font: 16pt 'Consolas';");
+        ui->statusbar->setStyleSheet("font-size: 12pt;");
 
         // MIDI Ports
 
@@ -136,13 +138,20 @@ namespace TCC::UI {
         auto mtcLabel = new MTC_TextWidgetGL;
         ui->mtc_TimeContainer->layout()->addWidget(mtcLabel);
 
-        auto mtcUpdate = new QTimer(this);
-        connect(mtcUpdate, &QTimer::timeout, [=]() {
-            mtcLabel->repaint();
-        });
-        mtcUpdate->start(1000 / 30);
+        ConfigureConnections();
+        UpdateStatusBar();
 
-        connect(&GamepadServer::instance(), SIGNAL(stateUpdate(GamepadState, int)), this, SLOT(GamepadStateChanged(GamepadState, int)));
+        // local process and update loop
+        auto localLoop_30 = new QTimer(this);
+        connect(localLoop_30, &QTimer::timeout, [=]() {
+            mtcLabel->repaint();
+
+            if (m_GamepadActive != IsGamepadActive()) {
+                m_GamepadActive = IsGamepadActive();
+                emit GamepadActivityChanged(m_GamepadActive);
+            }
+        });
+        localLoop_30->start(1000 / 30);
     }
 
     MainWindow::~MainWindow() {
@@ -154,29 +163,56 @@ namespace TCC::UI {
         event->accept();
     }
 
-    static float rawmap(float value, float from1, float to1, float from2, float to2) {
+    void MainWindow::ConfigureConnections() {
+        connect(&GamepadServer::instance(), SIGNAL(stateUpdate(GamepadState, int)), this, SLOT(GamepadStateChanged(GamepadState, int)));
+
+        connect(this, &MainWindow::GamepadActivityChanged, [=](bool state) {
+            UpdateStatusBar();
+        });
+    }
+
+    float MainWindow::GetAxisThreshold() const {
+        return GAMEPAD_AXIS_THRESHOLD;
+    }
+
+    bool MainWindow::IsGamepadActive() const {
+        return m_LastGamepadUpdate && (QDateTime::currentMSecsSinceEpoch() - m_LastGamepadUpdate < 500);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    void MainWindow::UpdateStatusBar() {
+        ui->statusbar->showMessage(IsGamepadActive() ? "Gamepad input active" : "Gamepad not detected");
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Gamepad input
+
+    static float map(float value, float from1, float to1, float from2, float to2) {
         return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
     }
 
     void MainWindow::GamepadStateChanged(const GamepadState& state, const int& playerId) {
+        m_LastGamepadUpdate = QDateTime::currentMSecsSinceEpoch();
+
         float accTarget_Pos_X = 0;
         if (fabs(state.m_lThumb.xAxis) > GetAxisThreshold())
-            accTarget_Pos_X = rawmap(state.m_lThumb.xAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+            accTarget_Pos_X = map(state.m_lThumb.xAxis, -32768.0f, 32767.0f, 0, 2) - 1;
 
         float accTarget_Pos_Y = 0;
         if (fabs(state.m_lThumb.yAxis) > GetAxisThreshold())
-            accTarget_Pos_Y = rawmap(state.m_lThumb.yAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+            accTarget_Pos_Y = map(state.m_lThumb.yAxis, -32768.0f, 32767.0f, 0, 2) - 1;
 
         float accTarget_Pos_Z = 0;
-        accTarget_Pos_Z       = -rawmap(state.m_lTrigger, 0.0f, 255.0f, 0, 1) + rawmap(state.m_rTrigger, 0, 255, 0, 1);
+        accTarget_Pos_Z       = -map(state.m_lTrigger, 0.0f, 255.0f, 0, 1) + map(state.m_rTrigger, 0, 255, 0, 1);
 
         float accTarget_Pan = 0;
         if (fabs(state.m_rThumb.xAxis) > GetAxisThreshold())
-            accTarget_Pan = rawmap(state.m_rThumb.xAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+            accTarget_Pan = map(state.m_rThumb.xAxis, -32768.0f, 32767.0f, 0, 2) - 1;
 
         float accTarget_Tilt = 0;
         if (fabs(state.m_rThumb.yAxis) > GetAxisThreshold())
-            accTarget_Tilt = rawmap(state.m_rThumb.yAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+            accTarget_Tilt = map(state.m_rThumb.yAxis, -32768.0f, 32767.0f, 0, 2) - 1;
 
         float fovDir = 0;
 
@@ -188,34 +224,17 @@ namespace TCC::UI {
         if (state.m_rShoulder && state.m_pad_y)
             fovDir = -100; // reset
 
-        m_CameraController->Update(accTarget_Pos_X,
-                                   accTarget_Pos_Y,
-                                   accTarget_Pos_Z,
-                                   accTarget_Pan,
-                                   accTarget_Tilt,
-                                   state.m_lThumb.pressed,
-                                   state.m_rThumb.pressed,
-                                   state.m_lShoulder,
-                                   state.m_rShoulder,
-                                   fovDir);
-
-        char posString[256];
-        snprintf(posString,
-                 sizeof(posString),
-                 "X: %.3fm\nY: %.3fm\nZ: %.3fm\n\nPan:  %.1fdeg\nTilt: %.1fdeg\n\nFoV: %.1fdeg",
-                 m_CameraController->GetX(),
-                 m_CameraController->GetY(),
-                 m_CameraController->GetZ(),
-                 m_CameraController->GetPan(),
-                 m_CameraController->GetTilt(),
-                 m_CameraController->GetFOV());
-
-        static int ret = 0;
-        ret++;
-        if (ret > 1) {
-            ret = 0;
-            ui->camLabel->setText(posString);
-        }
+        m_CameraController->Update(accTarget_Pos_X,        // x
+                                   accTarget_Pos_Y,        // y
+                                   accTarget_Pos_Z,        // z
+                                   accTarget_Pan,          // pan
+                                   accTarget_Tilt,         // tilt
+                                   state.m_lThumb.pressed, // reset pos
+                                   state.m_rThumb.pressed, // reset rot
+                                   state.m_lShoulder,      // fast pos
+                                   state.m_rShoulder,      // fast rot
+                                   fovDir                  // fov in/out
+        );
     }
 
 } // namespace TCC::UI

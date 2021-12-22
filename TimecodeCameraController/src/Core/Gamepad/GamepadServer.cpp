@@ -1,4 +1,4 @@
-// https://github.com/wboler05
+// https://github.com/wboler05/QtGamepadTemplate
 #include "GamepadServer.hpp"
 
 #include <Windows.h>

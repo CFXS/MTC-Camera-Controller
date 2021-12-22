@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1066</width>
-    <height>623</height>
+    <width>1112</width>
+    <height>498</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -109,6 +109,22 @@
         </widget>
        </item>
        <item>
+        <spacer name="horizontalSpacer_9">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>4</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <widget class="QLabel" name="label">
          <property name="font">
           <font>
@@ -165,6 +181,22 @@
           <bool>true</bool>
          </property>
         </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_8">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>16</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item>
         <spacer name="horizontalSpacer">
@@ -381,18 +413,7 @@
       <property name="frameShadow">
        <enum>QFrame::Plain</enum>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3">
-       <item row="3" column="0">
-        <widget class="QLabel" name="camLabel">
-         <property name="text">
-          <string>TextLabel</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QGridLayout" name="gridLayout_3"/>
      </widget>
     </item>
    </layout>

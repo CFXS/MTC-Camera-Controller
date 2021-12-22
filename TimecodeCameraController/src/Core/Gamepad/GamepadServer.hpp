@@ -1,4 +1,4 @@
-// https://github.com/wboler05
+// https://github.com/wboler05/QtGamepadTemplate
 #pragma once
 
 #include <QObject>
