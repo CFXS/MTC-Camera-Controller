@@ -17,6 +17,7 @@
 // ---------------------------------------------------------------------
 // [CFXS] //
 #include "MainWindow.hpp"
+#include <qnamespace.h>
 #include "ui_MainWindow.h"
 #include <QCloseEvent>
 #include <QTreeView>
@@ -28,12 +29,14 @@
 #include <QTimer>
 #include <QWidget>
 #include <QString>
-#include <QOpenGLWidget>
-#include <QPainter>
-#include <QPainterPath>
+#include <QLineEdit>
+#include <QStandardPaths>
+#include <QFileInfo>
+#include <QMessageBox>
 
 #include <Core/MIDI_Machine.hpp>
 #include <Core/Gamepad/GamepadServer.hpp>
+#include "MTC_TextWidgetGL.hpp"
 
 namespace TCC::UI {
 
@@ -41,71 +44,24 @@ namespace TCC::UI {
     static constexpr auto GAMEPAD_AXIS_THRESHOLD = 8000;
     /////////////////////////////////////////////////////////////////
 
-    class MTC_TextWidgetGL : public QOpenGLWidget {
-    public:
-        MTC_TextWidgetGL() = default;
-
-        void SetString(QString str) {
-            m_String = str;
-        }
-
-        void paintEvent(QPaintEvent* e) override {
-            QPainter painter(this);
-
-            painter.fillRect(0, 0, width(), height(), QBrush(qApp->palette().color(QPalette::Window)));
-
-            QPainterPath path;
-            path.addRoundedRect(QRectF(0, 0, width(), height()), 4, 4);
-            //QPen pen(Qt::black, 10);
-            //painter.setPen(pen);
-            painter.fillPath(path, QBrush(QColor(16, 16, 16)));
-            //painter.drawPath(path);
-
-            auto font = QFont("Consolas", 20);
-            font.setStyleStrategy(QFont::PreferQuality);
-            painter.setFont(font);
-
-            if (MIDI_Machine::GetInstance()->HaveSync()) {
-                m_String = MIDI_Machine::GetInstance()->GetTimeString();
-                if (MIDI_Machine::GetInstance()->IsTimecodeActive()) {
-                    painter.setPen(QColor{0, 255, 0});
-                } else {
-                    painter.setPen(QColor{160, 160, 160});
-                }
-            } else {
-                m_String = "- No MTC -";
-                painter.setPen(QColor{255, 0, 0});
-            }
-
-            auto txt_w = painter.fontMetrics().horizontalAdvance(m_String);
-            auto txt_h = painter.fontMetrics().height();
-            painter.drawText(width() / 2 - txt_w / 2, height() / 2 + txt_h / 3, m_String);
-
-            painter.end();
-        }
-
-    private:
-        QString m_String;
-    };
-
-    //////////////////////////////////////////////////////////////////////////////////////////////////
-
     MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(std::make_unique<Ui::MainWindow>()) {
         ui->setupUi(this);
-        resize(1280, 720); // default size
-        setWindowTitle(QStringLiteral(CFXS_PROGRAM_NAME) + " " + QStringLiteral(CFXS_VERSION_STRING));
+        resize(1280, 720);
 
+        m_MIDI             = new MIDI_Machine();
         m_CameraController = new CameraController(this);
 
         ui->content->setStyleSheet("border: 1px solid palette(dark);");
+        ui->statusbar->setStyleSheet("font-size: 10pt;");
 
-        ui->statusbar->setStyleSheet("font-size: 12pt;");
+        auto mtcLabel = new MTC_TextWidgetGL(m_MIDI);
+        ui->mtc_TimeContainer->layout()->addWidget(mtcLabel);
 
         // MIDI Ports
 
         ui->cb_MTC_Port->addItem(" - none - ", QVariant(-1));
 
-        for (auto& dev : MIDI_Machine::GetInstance()->GetDevices()) {
+        for (auto& dev : m_MIDI->GetDevices()) {
             ui->cb_MTC_Port->addItem(dev.name, QVariant(dev.index));
         }
 
@@ -120,23 +76,20 @@ namespace TCC::UI {
             if (netif.type() != QNetworkInterface::Ethernet && netif.type() != QNetworkInterface::Wifi &&
                 netif.type() != QNetworkInterface::Loopback)
                 continue;
+            if (!netif.flags().testFlag(QNetworkInterface::CanMulticast) || !netif.flags().testFlag(QNetworkInterface::IsUp))
+                continue;
 
             for (auto& addr : netif.addressEntries()) {
                 if (addr.ip().protocol() != QAbstractSocket::IPv4Protocol)
                     continue;
+                if (!addr.ip().isGlobal())
+                    continue;
 
                 ui->cb_Netif->addItem(addr.ip().toString() + QStringLiteral(" [") + netif.humanReadableName() + QStringLiteral("]"),
-                                      QVariant(netif.name()));
+                                      QVariant(addr.ip().toString()));
                 printf(" - %s [%s]\n", addr.ip().toString().toStdString().c_str(), netif.humanReadableName().toStdString().c_str());
             }
         }
-
-        connect(ui->cb_MTC_Port, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-            MIDI_Machine::GetInstance()->SetCurrentDevice(ui->cb_MTC_Port->itemData(index, Qt::UserRole).toInt());
-        });
-
-        auto mtcLabel = new MTC_TextWidgetGL;
-        ui->mtc_TimeContainer->layout()->addWidget(mtcLabel);
 
         ConfigureConnections();
         UpdateStatusBar();
@@ -150,17 +103,135 @@ namespace TCC::UI {
                 m_GamepadActive = IsGamepadActive();
                 emit GamepadActivityChanged(m_GamepadActive);
             }
+
+            static bool lastProjectLoaded = false;
+            if (!lastProjectLoaded) {
+                lastProjectLoaded = true;
+                LoadLastSession();
+            }
         });
-        localLoop_30->start(1000 / 30);
+        localLoop_30->start(1000 / 40);
     }
 
-    MainWindow::~MainWindow() {
+    void MainWindow::LoadLastSession() {
+        QString lastSessionCfgPath =
+            QStandardPaths::standardLocations(QStandardPaths::StandardLocation::AppDataLocation).first() + "/LastSession.tcc";
+
+        if (QFileInfo(lastSessionCfgPath).exists()) {
+            QSettings lastSession(lastSessionCfgPath, QSettings::IniFormat);
+            LoadProject(lastSession.value("ProjectPath").toString());
+        } else {
+            UpdateTitle();
+        }
     }
 
-    void MainWindow::closeEvent(QCloseEvent* event) {
-        printf("Close MainWindow\n");
-        emit Closed();
-        event->accept();
+    void MainWindow::SaveProject(bool saveAs) {
+        if (saveAs || !IsProjectOpen()) {
+            QString newPath = QFileDialog::getSaveFileName(this, "Save Project As...", "./", "CFXS TCC Project (*.tcc)");
+
+            if (newPath.isEmpty())
+                return;
+
+            m_ProjectPath = newPath;
+            m_ProjectOpen = true;
+        }
+
+        QSettings cfg(m_ProjectPath, QSettings::IniFormat);
+        cfg.setValue("WindowState", saveState());
+        cfg.setValue("WindowGeometry", saveGeometry());
+        cfg.setValue("MTC_Port", m_MIDI->GetCurrentDeviceName());
+        cfg.setValue("NetworkInterface", m_CameraController->GetNetworkInterface());
+        cfg.setValue("PatchUniverse", ui->sb_Universe->value());
+        cfg.setValue("PatchAddress", ui->sb_Address->value());
+        cfg.sync();
+
+        QSettings lastSession(
+            QStandardPaths::standardLocations(QStandardPaths::StandardLocation::AppDataLocation).first() + "/LastSession.tcc",
+            QSettings::IniFormat);
+        lastSession.setValue("ProjectPath", m_ProjectPath);
+        lastSession.sync();
+
+        m_UnsavedChanges = false;
+        UpdateTitle();
+    }
+
+    void MainWindow::LoadProject(const QString& path) {
+        if (m_UnsavedChanges) {
+        } else {
+            if (!path.isEmpty() && QFileInfo::exists(path)) {
+                m_ProjectPath = path;
+                m_ProjectOpen = true;
+
+                QSettings cfg(m_ProjectPath, QSettings::IniFormat);
+                restoreState(cfg.value("WindowState").toByteArray());
+                restoreGeometry(cfg.value("WindowGeometry").toByteArray());
+                SetMTC_Port(cfg.value("MTC_Port").toString());
+                SetNetworkInterface(cfg.value("NetworkInterface").toString());
+                SetPatchUniverse(cfg.value("PatchUniverse").toInt());
+                SetPatchAddress(cfg.value("PatchAddress").toInt());
+
+                m_UnsavedChanges = false;
+            } else {
+                if (!path.isEmpty()) {
+                    QSettings lastSession(
+                        QStandardPaths::standardLocations(QStandardPaths::StandardLocation::AppDataLocation).first() + "/LastSession.tcc",
+                        QSettings::IniFormat);
+                    lastSession.setValue("ProjectPath", "");
+                    QMessageBox::critical(nullptr, CFXS_PROGRAM_NAME, "Project file from last session not found");
+                }
+            }
+        }
+
+        UpdateTitle();
+    }
+
+    void MainWindow::SetMTC_Port(const QString& name) {
+        int cbIndex = 1;
+        for (auto& entry : m_MIDI->GetDevices()) {
+            if (entry.name == name) {
+                m_MIDI->SetCurrentDevice(entry.index);
+                ui->cb_MTC_Port->setCurrentIndex(cbIndex);
+                return;
+            }
+            cbIndex++;
+        }
+
+        m_MIDI->SetCurrentDevice(-1);
+        ui->cb_MTC_Port->setCurrentIndex(0);
+    }
+
+    void MainWindow::SetNetworkInterface(const QString& addr) {
+        for (int i = 1; i < ui->cb_Netif->count(); i++) {
+            if (ui->cb_Netif->itemData(i, Qt::UserRole).toString() == addr) {
+                m_CameraController->SetNetworkInterface(addr);
+                ui->cb_Netif->setCurrentIndex(i);
+                return;
+            }
+        }
+
+        m_CameraController->SetNetworkInterface("null");
+        ui->cb_Netif->setCurrentIndex(0);
+    }
+
+    void MainWindow::SetPatchUniverse(int uni) {
+        ui->sb_Universe->setValue(uni);
+        m_CameraController->SetPatchUniverse(uni);
+    }
+
+    void MainWindow::SetPatchAddress(int addr) {
+        ui->sb_Address->setValue(addr);
+        m_CameraController->SetPatchAddress(addr);
+    }
+
+    void MainWindow::UpdateTitle() {
+        if (m_UnsavedChanges) {
+            setWindowTitle(QStringLiteral(CFXS_PROGRAM_NAME) + " " + QStringLiteral(CFXS_VERSION_STRING) + " - " + GetProjectName() +
+                           " [unsaved changes]");
+        } else {
+            setWindowTitle(QStringLiteral(CFXS_PROGRAM_NAME) + " " + QStringLiteral(CFXS_VERSION_STRING) + " - " + GetProjectName());
+        }
+
+        UpdateStatusBar();
     }
 
     void MainWindow::ConfigureConnections() {
@@ -169,6 +240,90 @@ namespace TCC::UI {
         connect(this, &MainWindow::GamepadActivityChanged, [=](bool state) {
             UpdateStatusBar();
         });
+
+        connect(ui->sb_Universe, &QSpinBox::editingFinished, [=]() {
+            ui->sb_Universe->findChild<QLineEdit*>()->clearFocus();
+        });
+
+        connect(ui->sb_Address, &QSpinBox::editingFinished, [=]() {
+            ui->sb_Address->findChild<QLineEdit*>()->clearFocus();
+        });
+
+        connect(ui->sb_Universe, &QSpinBox::valueChanged, [=](int val) {
+            emit PatchChanged(static_cast<uint16_t>(val), ui->sb_Address->value());
+            SetChangesMade();
+        });
+
+        connect(ui->sb_Address, &QSpinBox::valueChanged, [=](int val) {
+            emit PatchChanged(ui->sb_Address->value(), static_cast<uint16_t>(val));
+            SetChangesMade();
+        });
+
+        connect(ui->cb_MTC_Port, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+            emit MIDIInterfaceChanged(ui->cb_MTC_Port->itemData(index, Qt::UserRole).toInt());
+            SetChangesMade();
+        });
+
+        connect(ui->cb_Netif, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+            emit NetworkInterfaceChanged(ui->cb_Netif->itemData(index, Qt::UserRole).toString());
+            SetChangesMade();
+        });
+
+        connect(this, &MainWindow::MIDIInterfaceChanged, [=](int idx) {
+            m_MIDI->SetCurrentDevice(idx);
+        });
+
+        connect(this, &MainWindow::NetworkInterfaceChanged, [=](const QString& addr) {
+            m_CameraController->SetNetworkInterface(addr);
+        });
+
+        connect(ui->actionSave, &QAction::triggered, this, [=]() {
+            SaveProject(false);
+        });
+
+        connect(ui->actionSave_As, &QAction::triggered, this, [=]() {
+            SaveProject(true);
+        });
+    }
+
+    void MainWindow::closeEvent(QCloseEvent* event) {
+        if (m_UnsavedChanges) {
+            auto res = QMessageBox::question(
+                nullptr,
+                CFXS_PROGRAM_NAME,
+                "Unsaved changes in current project\n\nSave before exiting?",
+                QMessageBox::StandardButton::Save | QMessageBox::StandardButton::No | QMessageBox::StandardButton::Cancel,
+                QMessageBox::StandardButton::Save);
+
+            if (res == QMessageBox::StandardButton::Save) {
+                SaveProject(false);
+            } else if (res == QMessageBox::StandardButton::Cancel) {
+                event->ignore();
+                return;
+            }
+        }
+
+        printf("Close MainWindow\n");
+        emit Closed();
+        event->accept();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    bool MainWindow::IsProjectOpen() const {
+        return m_ProjectOpen;
+    }
+
+    void MainWindow::SetProjectOpen(bool state) {
+        m_ProjectOpen = state;
+    }
+
+    QString MainWindow::GetProjectName() const {
+        if (IsProjectOpen()) {
+            return m_ProjectPath.mid(m_ProjectPath.lastIndexOf("/") + 1, m_ProjectPath.lastIndexOf('.') - 1);
+        } else {
+            return "No project open";
+        }
     }
 
     float MainWindow::GetAxisThreshold() const {
@@ -179,10 +334,20 @@ namespace TCC::UI {
         return m_LastGamepadUpdate && (QDateTime::currentMSecsSinceEpoch() - m_LastGamepadUpdate < 500);
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     void MainWindow::UpdateStatusBar() {
-        ui->statusbar->showMessage(IsGamepadActive() ? "Gamepad input active" : "Gamepad not detected");
+        if (IsProjectOpen()) {
+            ui->statusbar->showMessage("Project Path: " + m_ProjectPath + " | " +
+                                       QString(IsGamepadActive() ? "Gamepad Active" : "Gamepad Not Detected"));
+        } else {
+            ui->statusbar->showMessage(IsGamepadActive() ? "Gamepad input active" : "Gamepad not detected");
+        }
+    }
+
+    void MainWindow::SetChangesMade() {
+        if (!m_UnsavedChanges) {
+            m_UnsavedChanges = true;
+            UpdateTitle();
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

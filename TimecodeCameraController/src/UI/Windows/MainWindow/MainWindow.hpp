@@ -21,6 +21,7 @@
 #include <QMainWindow>
 #include <Core/Gamepad/GamepadState.hpp>
 #include <Core/CameraController.hpp>
+#include <Core/MIDI_Machine.hpp>
 
 namespace Ui {
     class MainWindow;
@@ -34,18 +35,37 @@ namespace TCC::UI {
     public:
         /// \param rawStateToLoad state data received from SaveState signal on window close
         explicit MainWindow(QWidget *parent = nullptr);
-        ~MainWindow();
+        ~MainWindow() = default;
 
     private:
         void ConfigureConnections();
         void UpdateStatusBar();
+        void LoadLastSession();
+        void SaveProject(bool saveAs);
+        void LoadProject(const QString &path);
 
         float GetAxisThreshold() const;
         bool IsGamepadActive() const;
 
+        bool IsProjectOpen() const;
+        void SetProjectOpen(bool state);
+        QString GetProjectName() const;
+
+        void UpdateTitle();
+
+        void SetChangesMade();
+
+        void SetMTC_Port(const QString &name);
+        void SetNetworkInterface(const QString &addr);
+        void SetPatchUniverse(int uni);
+        void SetPatchAddress(int addr);
+
     signals:
         void Closed();
         void GamepadActivityChanged(bool state);
+        void NetworkInterfaceChanged(const QString &newAddress);
+        void MIDIInterfaceChanged(int newIndex);
+        void PatchChanged(uint16_t universe, uint16_t address);
 
     protected slots:
         void GamepadStateChanged(const GamepadState &gps, const int &playerId);
@@ -55,10 +75,17 @@ namespace TCC::UI {
 
     private:
         std::unique_ptr<Ui::MainWindow> ui;
+        MIDI_Machine *m_MIDI;
         CameraController *m_CameraController;
 
+        // Gamepad
         qint64 m_LastGamepadUpdate = 0;
         bool m_GamepadActive       = false;
+
+        // Project
+        bool m_ProjectOpen    = false;
+        bool m_UnsavedChanges = false;
+        QString m_ProjectPath;
     };
 
 } // namespace TCC::UI

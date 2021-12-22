@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -34,30 +34,36 @@ namespace TCC {
         };
 
     public:
-        static MIDI_Machine* GetInstance();
+        MIDI_Machine();
+        ~MIDI_Machine();
 
-        const QVector<DeviceInfo>& GetDevices() {
+        const QVector<DeviceInfo>& GetDevices() const {
             return m_DeviceList;
         }
 
-        QString IndexToName(int idx);
-
         void SetCurrentDevice(int idx);
 
-        QString GetTimeString();
+        QString IndexToName(int idx) const;
+
+        QString GetTimeString() const;
 
         bool HaveSync() const;
+
+        QString GetCurrentDeviceName() const {
+            return IndexToName(m_CurrentDeviceIndex);
+        }
 
         qint64 GetLastUpdateTimestamp() const {
             return m_LastUpdateTimestamp;
         }
 
+        qint64 GetTimeMilliseconds() const {
+            return m_CurrentTimestamp; // cast to int - double precision probably not needed
+        }
+
         bool IsTimecodeActive() const;
 
     private:
-        MIDI_Machine();
-        ~MIDI_Machine();
-
         void DeleteDevice();
 
         void ProcessMessage(const std::vector<uint8_t>* data);
@@ -69,6 +75,7 @@ namespace TCC {
     private:
         QVector<DeviceInfo> m_DeviceList;
         RtMidiIn* m_CurrentDevice = nullptr;
+        int m_CurrentDeviceIndex  = -1;
 
         double m_CurrentTimestamp = 0;
         bool m_Synced             = false;

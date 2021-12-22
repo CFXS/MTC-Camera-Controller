@@ -5,14 +5,14 @@
 /* QMenuBar */
 
 QMenuBar {
-    background-color: palette(window);
+    background-color: rgba(0, 0, 0, 36);
     spacing: 0;
 }
 
 QMenuBar::item {
     padding: 2px 10px;
-    background: transparent;
     border: none;
+    background: transparent;
     color: rgb(255, 255, 255);
 }
 
@@ -185,6 +185,10 @@ QComboBox::drop-down {
     border: none;
     background-color: rgb(80, 80, 80);
     padding: 4;
+}
+
+QComboBox::drop-down:hover {
+    background-color: rgb(120, 120, 120);
 }
 
 QComboBox::down-arrow {

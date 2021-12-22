@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------
 // CFXS TImecodeCameraController <https://github.com/CFXS/TimecodeCameraController>
 // Copyright (C) 2021 | CFXS
-// 
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 // ---------------------------------------------------------------------
@@ -26,17 +26,6 @@ namespace TCC {
     static constexpr auto MIDI_BUFFER_SIZE  = 1024 * 8;
     static constexpr auto MIDI_BUFFER_COUNT = 8;
     ///////////////////////////////////////////////////
-
-    MIDI_Machine *MIDI_Machine::GetInstance() {
-        static MIDI_Machine mm;
-        return &mm;
-    }
-
-    MIDI_Machine::~MIDI_Machine() {
-        if (m_CurrentDevice) {
-            DeleteDevice();
-        }
-    }
 
     MIDI_Machine::MIDI_Machine() {
         printf("Create MIDI_Machine\n");
@@ -68,15 +57,22 @@ namespace TCC {
         delete midiin;
     }
 
+    MIDI_Machine::~MIDI_Machine() {
+        if (m_CurrentDevice) {
+            DeleteDevice();
+        }
+    }
+
     ////////////////////////////////////////////////////////////////
 
     void MIDI_Machine::DeleteDevice() {
         delete m_CurrentDevice;
-        m_CurrentDevice = nullptr;
-        m_Synced        = false;
+        m_CurrentDevice      = nullptr;
+        m_Synced             = false;
+        m_CurrentDeviceIndex = -1;
     }
 
-    QString MIDI_Machine::IndexToName(int idx) {
+    QString MIDI_Machine::IndexToName(int idx) const {
         if (idx == -1)
             return QStringLiteral("null");
 
@@ -85,12 +81,12 @@ namespace TCC {
                 return dev.name;
         }
 
-        return QStringLiteral("unknown");
+        return QStringLiteral("null");
     }
 
     void MIDI_Machine::SetCurrentDevice(int idx) {
         if (m_CurrentDevice) {
-            printf("Close MIDI device \"%s\"\n", m_CurrentDevice->getPortName().c_str());
+            printf("Close MIDI device \"%s\"\n", GetCurrentDeviceName().toStdString().c_str());
             DeleteDevice();
         }
 
@@ -121,7 +117,8 @@ namespace TCC {
 
         m_CurrentDevice->ignoreTypes(false, false, true);
 
-        printf("MIDI device \"%s\" open\n", IndexToName(idx).toStdString().c_str());
+        m_CurrentDeviceIndex = idx;
+        printf("Open MIDI device \"%s\"\n", IndexToName(idx).toStdString().c_str());
     }
 
     void MIDI_Machine::ProcessMessage(const std::vector<uint8_t> *data) {
@@ -177,11 +174,9 @@ namespace TCC {
         mutex.unlock();
 
         m_LastUpdateTimestamp = QDateTime::currentMSecsSinceEpoch();
-
-        //printf("[MTC] %s %s (%.1lfms)\n", m_TimeString, MTC_FRAMERATE_TO_STRING[m_CurrentFramerate], m_CurrentTimestamp);
     }
 
-    QString MIDI_Machine::GetTimeString() {
+    QString MIDI_Machine::GetTimeString() const {
         QMutex mutex;
         mutex.lock();
         auto str = QString(m_TimeString);

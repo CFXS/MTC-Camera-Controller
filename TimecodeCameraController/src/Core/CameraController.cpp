@@ -36,6 +36,19 @@ namespace TCC {
         Reset();
     }
 
+    void CameraController::SetNetworkInterface(const QString& newAddress) {
+        m_NetworkInterfaceAddress = newAddress;
+        printf("Set interface to %s\n", newAddress.toStdString().c_str());
+    }
+
+    void CameraController::SetPatchUniverse(uint16_t universe) {
+        m_PatchUniverse = universe;
+    }
+
+    void CameraController::SetPatchAddress(uint16_t address) {
+        m_PatchUniverse = address;
+    }
+
     void CameraController::Update(float ax,
                                   float ay,
                                   float az,

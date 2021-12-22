@@ -24,13 +24,13 @@ namespace TCC {
         }
 
     private:
-        char m_ID[8]       = "Art-Net";
-        uint16_t m_OpCode  = 0x5000;
-        uint16_t m_Version = 0x000E;
+        __unused char m_ID[8]       = "Art-Net";
+        __unused uint16_t m_OpCode  = 0x5000;
+        __unused uint16_t m_Version = 0x000E;
         uint8_t m_Sequence;
-        uint8_t m_Physical = 0;
+        __unused uint8_t m_Physical = 0;
         uint16_t m_Universe;
-        uint16_t m_DataLength = 512;
+        __unused uint16_t m_DataLength = 512;
         uint8_t m_Data[512];
     };
 #pragma pack()
