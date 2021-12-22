@@ -181,9 +181,12 @@ namespace TCC::UI {
         float fovDir = 0;
 
         if (state.m_pad_y)
-            fovDir = -0.5f;
+            fovDir = -0.1f;
         if (state.m_pad_x)
-            fovDir = 0.5f;
+            fovDir = 0.1f;
+
+        if (state.m_rShoulder && state.m_pad_y)
+            fovDir = -100; // reset
 
         m_CameraController->Update(accTarget_Pos_X,
                                    accTarget_Pos_Y,
