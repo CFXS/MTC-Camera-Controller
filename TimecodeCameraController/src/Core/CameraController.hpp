@@ -11,7 +11,16 @@ namespace TCC {
     public:
         CameraController(QObject* parent = nullptr);
 
-        void Update(float ax, float ay, float az, float ap, float at, bool posReset, bool rotReset);
+        void Update(float ax,
+                    float ay,
+                    float az,
+                    float ap,
+                    float at,
+                    bool posReset,
+                    bool rotReset,
+                    bool fastPos,
+                    bool fastRot,
+                    float fovDirection);
 
         void Reset();
 
@@ -35,12 +44,17 @@ namespace TCC {
             return m_Tilt;
         }
 
+        inline float GetFOV() const {
+            return m_Fov;
+        }
+
     private:
         float m_X;
         float m_Y;
         float m_Z;
         float m_Pan;
         float m_Tilt;
+        float m_Fov;
     };
 
 } // namespace TCC

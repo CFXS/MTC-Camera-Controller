@@ -31,7 +31,6 @@
 #include <QOpenGLWidget>
 #include <QPainter>
 #include <QPainterPath>
-#include <Map.hpp>
 
 #include <Core/MIDI_Machine.hpp>
 #include <Core/Gamepad/GamepadServer.hpp>
@@ -98,6 +97,8 @@ namespace TCC::UI {
 
         ui->content->setStyleSheet("border: 1px solid palette(dark);");
 
+        ui->camLabel->setStyleSheet("font: 24pt 'Consolas';");
+
         // MIDI Ports
 
         ui->cb_MTC_Port->addItem(" - none - ", QVariant(-1));
@@ -153,13 +154,36 @@ namespace TCC::UI {
         event->accept();
     }
 
-    void MainWindow::GamepadStateChanged(const GamepadState& state, const int& playerId) {
-        float accTarget_Pos_Z = map(state.m_lTrigger, 0, 255, 0, -1) + map(state.m_rTrigger, 0, 255, 0, 1);
-        float accTarget_Pos_X = map(fabs(state.m_lThumb.xAxis) > GetAxisThreshold() ? state.m_lThumb.xAxis : 0, -32768, 32767, -1, 1);
-        float accTarget_Pos_Y = map(fabs(state.m_lThumb.yAxis) > GetAxisThreshold() ? state.m_lThumb.yAxis : 0, -32768, 32767, -1, 1);
+    static float rawmap(float value, float from1, float to1, float from2, float to2) {
+        return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
+    }
 
-        float accTarget_Pan  = map(fabs(state.m_rThumb.xAxis) > GetAxisThreshold() ? state.m_rThumb.xAxis : 0, -32768, 32767, -1, 1);
-        float accTarget_Tilt = map(fabs(state.m_rThumb.yAxis) > GetAxisThreshold() ? state.m_rThumb.yAxis : 0, -32768, 32767, -1, 1);
+    void MainWindow::GamepadStateChanged(const GamepadState& state, const int& playerId) {
+        float accTarget_Pos_X = 0;
+        if (fabs(state.m_lThumb.xAxis) > GetAxisThreshold())
+            accTarget_Pos_X = rawmap(state.m_lThumb.xAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+
+        float accTarget_Pos_Y = 0;
+        if (fabs(state.m_lThumb.yAxis) > GetAxisThreshold())
+            accTarget_Pos_Y = rawmap(state.m_lThumb.yAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+
+        float accTarget_Pos_Z = 0;
+        accTarget_Pos_Z       = -rawmap(state.m_lTrigger, 0.0f, 255.0f, 0, 1) + rawmap(state.m_rTrigger, 0, 255, 0, 1);
+
+        float accTarget_Pan = 0;
+        if (fabs(state.m_rThumb.xAxis) > GetAxisThreshold())
+            accTarget_Pan = rawmap(state.m_rThumb.xAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+
+        float accTarget_Tilt = 0;
+        if (fabs(state.m_rThumb.yAxis) > GetAxisThreshold())
+            accTarget_Tilt = rawmap(state.m_rThumb.yAxis, -32768.0f, 32767.0f, 0, 2) - 1;
+
+        float fovDir = 0;
+
+        if (state.m_pad_y)
+            fovDir = -0.5f;
+        if (state.m_pad_x)
+            fovDir = 0.5f;
 
         m_CameraController->Update(accTarget_Pos_X,
                                    accTarget_Pos_Y,
@@ -167,7 +191,28 @@ namespace TCC::UI {
                                    accTarget_Pan,
                                    accTarget_Tilt,
                                    state.m_lThumb.pressed,
-                                   state.m_rThumb.pressed);
+                                   state.m_rThumb.pressed,
+                                   state.m_lShoulder,
+                                   state.m_rShoulder,
+                                   fovDir);
+
+        char posString[256];
+        snprintf(posString,
+                 sizeof(posString),
+                 "X: %.3fm\nY: %.3fm\nZ: %.3fm\n\nPan:  %.1fdef\nTilt: %.1fdeg\n\nFoV: %.1fdeg",
+                 m_CameraController->GetX(),
+                 m_CameraController->GetY(),
+                 m_CameraController->GetZ(),
+                 m_CameraController->GetPan(),
+                 m_CameraController->GetTilt(),
+                 m_CameraController->GetFOV());
+
+        static int ret = 0;
+        ret++;
+        if (ret > 1) {
+            ret = 0;
+            ui->camLabel->setText(posString);
+        }
     }
 
 } // namespace TCC::UI

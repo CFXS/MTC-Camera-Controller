@@ -38,7 +38,7 @@ namespace TCC::UI {
 
     private:
         float GetAxisThreshold() const {
-            return 4500;
+            return 8000;
         }
 
     signals:

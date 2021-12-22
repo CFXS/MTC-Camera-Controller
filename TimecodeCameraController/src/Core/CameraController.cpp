@@ -5,21 +5,33 @@
 namespace TCC {
 
     ///////////////////////////////////////////////////////////////
-    static constexpr float POS_MUL = 0.1f;
-    static constexpr float ROT_MUL = 0.1f;
+    static constexpr float POS_MUL_NORMAL = 0.025f;
+    static constexpr float POS_MUL_FAST   = 0.15f;
+    static constexpr float ROT_MUL_NORMAL = 0.1f;
+    static constexpr float ROT_MUL_FAST   = 0.75f;
     ///////////////////////////////////////////////////////////////
 
     CameraController::CameraController(QObject* parent) : QObject(parent) {
         printf("Create CameraController\n");
+        Reset();
     }
 
-    void CameraController::Update(float ax, float ay, float az, float ap, float at, bool posReset, bool rotReset) {
-        m_X += ax * POS_MUL;
-        m_Y += ay * POS_MUL;
-        m_Z += az * POS_MUL;
+    void CameraController::Update(float ax,
+                                  float ay,
+                                  float az,
+                                  float ap,
+                                  float at,
+                                  bool posReset,
+                                  bool rotReset,
+                                  bool fastPos,
+                                  bool fastRot,
+                                  float fovDirection) {
+        m_X += ax * (fastPos ? POS_MUL_FAST : POS_MUL_NORMAL);
+        m_Y += ay * (fastPos ? POS_MUL_FAST : POS_MUL_NORMAL);
+        m_Z += az * (fastPos ? POS_MUL_FAST : POS_MUL_NORMAL);
 
-        m_Pan += ap * ROT_MUL;
-        m_Tilt += at * ROT_MUL;
+        m_Pan += ap * (fastRot ? ROT_MUL_FAST : ROT_MUL_NORMAL);
+        m_Tilt += at * (fastRot ? ROT_MUL_FAST : ROT_MUL_NORMAL);
 
         if (posReset) {
             m_X = 0;
@@ -30,7 +42,10 @@ namespace TCC {
         if (rotReset) {
             m_Pan  = 0;
             m_Tilt = 0;
+            m_Fov  = 75;
         }
+
+        m_Fov += fovDirection;
 
         if (m_X < -50)
             m_X = -50;
@@ -38,6 +53,8 @@ namespace TCC {
             m_Y = -50;
         if (m_Z < -50)
             m_Z = -50;
+        if (m_Fov < 5)
+            m_Fov = 5;
 
         if (m_X > 50)
             m_X = 50;
@@ -45,6 +62,8 @@ namespace TCC {
             m_Y = 50;
         if (m_Z > 50)
             m_Z = 50;
+        if (m_Fov > 90)
+            m_Fov = 90;
     }
 
     void CameraController::Reset() {
@@ -53,6 +72,7 @@ namespace TCC {
         m_Z    = 0;
         m_Pan  = 0;
         m_Tilt = 0;
+        m_Fov  = 75;
     }
 
 } // namespace TCC
