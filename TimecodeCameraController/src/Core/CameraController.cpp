@@ -31,7 +31,7 @@ namespace TCC {
 
     static constexpr float DEFAULT_FOV = 75.0f;
 
-    static constexpr auto DMX_SEND_RATE = 60;
+    static constexpr auto DMX_SEND_RATE = 44;
     ///////////////////////////////////////////////////////////////
 
     CameraController::CameraController(QObject* parent) : QObject(parent) {
