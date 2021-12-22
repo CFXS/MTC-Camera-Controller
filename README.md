@@ -8,6 +8,6 @@ A Qt based project for controlling cameras in lighting previz software with time
 - [Capture](https://www.capture.se/) (DMX extended mode camera)
 
 ### Third Party Stuff
-- [Qt6](https://www.qt.io/product/qt6)
-- [RtMidi](https://github.com/thestk/rtmidi)
-- [Gamepad Server](https://github.com/wboler05/QtGamepadTemplate)
+- [Qt6](https://www.qt.io/product/qt6) - UI, Network
+- [RtMidi](https://github.com/thestk/rtmidi) - MIDI Input for MTC
+- [Gamepad Server](https://github.com/wboler05/QtGamepadTemplate) - Gamepad Input
