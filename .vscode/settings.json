@@ -112,6 +112,7 @@
         "qfontdatabase": "cpp",
         "qpainter": "cpp",
         "qgraphicsscene": "cpp",
-        "qopenglwidget": "cpp"
+        "qopenglwidget": "cpp",
+        "qpainterpath": "cpp"
     }
 }
