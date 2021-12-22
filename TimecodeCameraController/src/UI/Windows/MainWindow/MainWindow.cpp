@@ -97,7 +97,7 @@ namespace TCC::UI {
 
         ui->content->setStyleSheet("border: 1px solid palette(dark);");
 
-        ui->camLabel->setStyleSheet("font: 24pt 'Consolas';");
+        ui->camLabel->setStyleSheet("font: 16pt 'Consolas';");
 
         // MIDI Ports
 
@@ -202,7 +202,7 @@ namespace TCC::UI {
         char posString[256];
         snprintf(posString,
                  sizeof(posString),
-                 "X: %.3fm\nY: %.3fm\nZ: %.3fm\n\nPan:  %.1fdef\nTilt: %.1fdeg\n\nFoV: %.1fdeg",
+                 "X: %.3fm\nY: %.3fm\nZ: %.3fm\n\nPan:  %.1fdeg\nTilt: %.1fdeg\n\nFoV: %.1fdeg",
                  m_CameraController->GetX(),
                  m_CameraController->GetY(),
                  m_CameraController->GetZ(),
