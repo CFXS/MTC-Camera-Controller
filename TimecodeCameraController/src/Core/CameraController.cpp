@@ -75,6 +75,10 @@ namespace TCC {
             }
         } else {
             m_AddressValid = false;
+            if (m_Socket && m_SocketConnected) {
+                m_Socket->close();
+            }
+            m_SocketConnected = false;
         }
 
         printf("Set interface to %s\n", newAddress.toStdString().c_str());
