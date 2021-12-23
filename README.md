@@ -1,4 +1,4 @@
-# CFXS TimecodeCameraController
+# CFXS MTC Camera Controller
 A Qt based project for controlling cameras in lighting previz software with timecode
 
 ### Timecode Input
