@@ -132,21 +132,20 @@ namespace TCC {
         float m_Z    = 0;
         float m_Pan  = 0;
         float m_Tilt = 0;
-        float m_Fov  = 0;
+        float m_Fov  = 75;
 
         float m_TargetX    = 0;
         float m_TargetY    = 0;
         float m_TargetZ    = 0;
         float m_TargetPan  = 0;
         float m_TargetTilt = 0;
-        float m_TargetFov  = 0;
+        float m_TargetFov  = 75;
 
         float m_ModX    = 0;
         float m_ModY    = 0;
         float m_ModZ    = 0;
         float m_ModPan  = 0;
         float m_ModTilt = 0;
-        float m_ModFov  = 0;
 
         float m_NormalPositionMul = 0.05f;
         float m_FastPositionMul   = 0.5f;

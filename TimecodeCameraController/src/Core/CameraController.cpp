@@ -103,6 +103,8 @@ namespace TCC {
         m_ArtPacket.SetSequence(m_DMX_Sequence++);
 
         m_Socket->writeDatagram((const char*)m_ArtPacket.GetRawData(), sizeof(m_ArtPacket), QHostAddress("255.255.255.255"), ARTNET_PORT);
+
+        printf("%.2f\n", m_Fov);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +119,7 @@ namespace TCC {
         m_ModZ    = lerp(m_ModZ, m_TargetZ, m_AccelerationMul);
         m_ModPan  = lerp(m_ModPan, m_TargetPan, m_AccelerationMul);
         m_ModTilt = lerp(m_ModTilt, m_TargetTilt, m_AccelerationMul);
-        m_ModFov  = lerp(m_ModFov, m_TargetFov, m_AccelerationMul);
+        m_Fov     = lerp(m_Fov, m_TargetFov, m_AccelerationMul);
 
         m_X += m_ModX;
         m_Y += m_ModY;
@@ -125,7 +127,6 @@ namespace TCC {
 
         m_Pan += m_ModPan;
         m_Tilt += m_ModTilt;
-        m_Fov += m_ModFov;
 
         if (m_X < -50)
             m_X = -50;
