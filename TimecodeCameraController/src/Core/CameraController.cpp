@@ -117,6 +117,7 @@ namespace TCC {
         m_ModZ    = lerp(m_ModZ, m_TargetZ, m_AccelerationMul);
         m_ModPan  = lerp(m_ModPan, m_TargetPan, m_AccelerationMul);
         m_ModTilt = lerp(m_ModTilt, m_TargetTilt, m_AccelerationMul);
+        m_ModFov  = lerp(m_ModFov, m_TargetFov, m_AccelerationMul);
 
         m_X += m_ModX;
         m_Y += m_ModY;
@@ -124,6 +125,7 @@ namespace TCC {
 
         m_Pan += m_ModPan;
         m_Tilt += m_ModTilt;
+        m_Fov += m_ModFov;
 
         if (m_X < -50)
             m_X = -50;
@@ -148,6 +150,8 @@ namespace TCC {
             m_Pan = -180;
         if (m_Tilt > 180)
             m_Tilt = -180;
+        if (m_Fov > 90)
+            m_Fov = 90;
     }
 
     void CameraController::Update(float ax,
@@ -170,24 +174,21 @@ namespace TCC {
         m_TargetTilt = at * (fastRot ? m_FastRotationMul : m_NormalRotationMul);
 
         if (posReset) {
-            m_X = 0;
-            m_Y = 0;
-            m_Z = 0;
+            m_TargetX = 0;
+            m_TargetY = 0;
+            m_TargetZ = 0;
         }
 
         if (rotReset) {
-            m_Pan  = 0;
-            m_Tilt = 0;
-            m_Fov  = DEFAULT_FOV;
+            m_TargetPan  = 0;
+            m_TargetTilt = 0;
+            m_TargetFov  = DEFAULT_FOV;
         }
 
         if (fovDirection > -90)
-            m_Fov += fovDirection * 4;
+            m_TargetFov += fovDirection * 4;
         else
-            m_Fov = DEFAULT_FOV;
-
-        if (m_Fov > 90)
-            m_Fov = 90;
+            m_TargetFov = DEFAULT_FOV;
 
         mutex.unlock();
     }
