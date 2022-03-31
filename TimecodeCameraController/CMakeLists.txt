@@ -9,7 +9,7 @@ include("_Sources.cmake")
 
 add_compile_definitions("_CRT_SECURE_NO_WARNINGS")
 
-add_compile_definitions("CFXS_VERSION_STRING=\"v1.0\"")
+add_compile_definitions("CFXS_VERSION_STRING=\"v1.1\"")
 add_compile_definitions("CFXS_PROGRAM_NAME=\"CFXS MTC Camera Controller\"")
 
 set(CMAKE_AUTOMOC ON) 

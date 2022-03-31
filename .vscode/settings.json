@@ -114,6 +114,7 @@
         "qgraphicsscene": "cpp",
         "qopenglwidget": "cpp",
         "qpainterpath": "cpp",
-        "qmutex": "cpp"
+        "qmutex": "cpp",
+        "*.tcc": "cpp"
     }
 }

@@ -51,7 +51,7 @@ namespace TCC::UI {
         m_MIDI             = new MIDI_Machine();
         m_CameraController = new CameraController(this);
 
-        ui->content->setStyleSheet("border: 1px solid palette(dark);");
+        ui->content->setStyleSheet("border: none;");
         ui->statusbar->setStyleSheet("font-size: 10pt;");
 
         auto mtcLabel = new MTC_TextWidgetGL(m_MIDI);
@@ -143,6 +143,12 @@ namespace TCC::UI {
         cfg.setValue("NetworkInterface", m_CameraController->GetNetworkInterface());
         cfg.setValue("PatchUniverse", ui->sb_Universe->value());
         cfg.setValue("PatchAddress", ui->sb_Address->value());
+        cfg.setValue("AccelerationMultiplier", m_CameraController->GetAccelerationMultipler());
+        cfg.setValue("NormalPosMultiplier", m_CameraController->GetNormalPositionMultiplier());
+        cfg.setValue("FastPosMultiplier", m_CameraController->GetFastPositionMultiplier());
+        cfg.setValue("NormalRotMultiplier", m_CameraController->GetNormalRotationMultiplier());
+        cfg.setValue("FastRotMultiplier", m_CameraController->GetFastRotationMultiplier());
+
         cfg.sync();
 
         QSettings lastSession(
@@ -163,12 +169,29 @@ namespace TCC::UI {
                 m_ProjectOpen = true;
 
                 QSettings cfg(m_ProjectPath, QSettings::IniFormat);
-                restoreState(cfg.value("WindowState").toByteArray());
-                restoreGeometry(cfg.value("WindowGeometry").toByteArray());
-                SetMTC_Port(cfg.value("MTC_Port").toString());
-                SetNetworkInterface(cfg.value("NetworkInterface").toString());
-                SetPatchUniverse(cfg.value("PatchUniverse").toInt());
-                SetPatchAddress(cfg.value("PatchAddress").toInt());
+
+                if (cfg.contains("WindowState"))
+                    restoreState(cfg.value("WindowState").toByteArray());
+                if (cfg.contains("WindowGeometry"))
+                    restoreGeometry(cfg.value("WindowGeometry").toByteArray());
+                if (cfg.contains("MTC_Port"))
+                    SetMTC_Port(cfg.value("MTC_Port").toString());
+                if (cfg.contains("NetworkInterface"))
+                    SetNetworkInterface(cfg.value("NetworkInterface").toString());
+                if (cfg.contains("PatchUniverse"))
+                    SetPatchUniverse(cfg.value("PatchUniverse").toInt());
+                if (cfg.contains("PatchAddress"))
+                    SetPatchAddress(cfg.value("PatchAddress").toInt());
+                if (cfg.contains("AccelerationMultiplier"))
+                    m_CameraController->SetAccelerationMultipler(cfg.value("AccelerationMultiplier").toFloat());
+                if (cfg.contains("NormalPosMultiplier"))
+                    m_CameraController->SetNormalPositionMultiplier(cfg.value("NormalPosMultiplier").toFloat());
+                if (cfg.contains("FastPosMultiplier"))
+                    m_CameraController->SetFastPositionMultiplier(cfg.value("FastPosMultiplier").toFloat());
+                if (cfg.contains("NormalRotMultiplier"))
+                    m_CameraController->SetNormalRotationMultiplier(cfg.value("NormalRotMultiplier").toFloat());
+                if (cfg.contains("FastRotMultiplier"))
+                    m_CameraController->SetFastRotationMultiplier(cfg.value("FastRotMultiplier").toFloat());
 
                 m_UnsavedChanges = false;
             } else {
@@ -182,7 +205,28 @@ namespace TCC::UI {
             }
         }
 
+        ui->accelMulSlider->setValue(m_CameraController->GetAccelerationMultipler() * 100.0f);
+        ui->normalPosSpeedSlider->setValue(m_CameraController->GetNormalPositionMultiplier() * 1000.0f);
+        ui->fastPosSpeedSlider->setValue(m_CameraController->GetFastPositionMultiplier() * 1000.0f);
+        ui->normalRotSpeedSlider->setValue(m_CameraController->GetNormalRotationMultiplier() * 1000.0f);
+        ui->fastRotSpeedSlider->setValue(m_CameraController->GetFastRotationMultiplier() * 1000.0f);
+
         UpdateTitle();
+        UpdateSliderLabels();
+    }
+
+    void MainWindow::UpdateSliderLabels() {
+        char txt[64];
+        snprintf(txt, 64, "Acceleration Multiplier: %.2f", m_CameraController->GetAccelerationMultipler());
+        ui->accelLabel->setText(txt);
+        snprintf(txt, 64, "Normal Position Speed: %.2f", m_CameraController->GetNormalPositionMultiplier());
+        ui->normalPosLabel->setText(txt);
+        snprintf(txt, 64, "Fast Position Speed: %.2f", m_CameraController->GetFastPositionMultiplier());
+        ui->fastPosLabel->setText(txt);
+        snprintf(txt, 64, "Normal Rotation Speed: %.2f", m_CameraController->GetNormalRotationMultiplier());
+        ui->normalRotLabel->setText(txt);
+        snprintf(txt, 64, "Fast Rotation Speed: %.2f", m_CameraController->GetFastRotationMultiplier());
+        ui->fastRotLabel->setText(txt);
     }
 
     void MainWindow::SetMTC_Port(const QString& name) {
@@ -278,6 +322,31 @@ namespace TCC::UI {
 
         connect(this, &MainWindow::NetworkInterfaceChanged, [=](const QString& addr) {
             m_CameraController->SetNetworkInterface(addr);
+        });
+
+        connect(ui->accelMulSlider, &QSlider::valueChanged, [=](int value) {
+            m_CameraController->SetAccelerationMultipler(value / 100.0f);
+            UpdateSliderLabels();
+        });
+
+        connect(ui->normalPosSpeedSlider, &QSlider::valueChanged, [=](int value) {
+            m_CameraController->SetNormalPositionMultiplier(value / 1000.0f);
+            UpdateSliderLabels();
+        });
+
+        connect(ui->fastPosSpeedSlider, &QSlider::valueChanged, [=](int value) {
+            m_CameraController->SetFastPositionMultiplier(value / 1000.0f);
+            UpdateSliderLabels();
+        });
+
+        connect(ui->normalRotSpeedSlider, &QSlider::valueChanged, [=](int value) {
+            m_CameraController->SetNormalRotationMultiplier(value / 1000.0f);
+            UpdateSliderLabels();
+        });
+
+        connect(ui->fastRotSpeedSlider, &QSlider::valueChanged, [=](int value) {
+            m_CameraController->SetFastRotationMultiplier(value / 1000.0f);
+            UpdateSliderLabels();
         });
 
         connect(ui->actionSave, &QAction::triggered, this, [=]() {
